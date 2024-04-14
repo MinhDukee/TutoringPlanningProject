@@ -75,7 +75,7 @@ const Login = ({}) => {
         <input {...authorProps} />
 
         <button type = "submit">Login</button>
-
+\
         <button onClick={() => {
           contentreset()
           authorreset()
@@ -325,55 +325,6 @@ const Footer = () => (
     See <a href='https://github.com/fullstack-hy2020/routed-anecdotes/blob/master/src/App.js'>https://github.com/fullstack-hy2020/routed-anecdotes/blob/master/src/App.js</a> for the source code.
   </div>
 )
-
-const CreateNew = (props) => {
-  const content = useField('text')
-  const author = useField('text')
-  const info = useField('text')
-  const navigate = useNavigate()
-  const { reset: authorreset, ...authorProps } = author
-  const { reset: contentreset, ...contentProps } = content
-  const { reset: inforeset, ...infoProps } = info
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    console.log(content)
-    props.addNew({
-      content: content.value,
-      author: author.value,
-      info: info.value,
-      votes: 0
-    })
-    navigate('/anecdotes')
-    
-  }
-  
-  return (
-    <div>
-      <h2>create a new anecdote</h2>
-      <form onSubmit={handleSubmit}>
-
-        content: 
-        <input  {...contentProps} /> 
-        <br/> 
-        author: 
-        <input {...authorProps} />
-        <br /> 
-        url for more info:
-        <input {...infoProps} />
-
-        <button type = "submit">create</button>
-
-        <button onClick={() => {
-          contentreset()
-          authorreset()
-          inforeset()
-        }} type = "reset"> reset </button> 
-      </form>
-    </div>
-  )
-
-}
 
 const App = () => {
 
