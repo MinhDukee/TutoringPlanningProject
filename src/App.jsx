@@ -27,13 +27,13 @@ const Menu = (props) => {
     <div>
       <Router>
         <div>
-          <Link style={padding} to="/">about</Link>
+          <Link style={padding} to="/">Login</Link>
           <Link style = {padding} to = "/dashboard">dashboard</Link>
           <Link style = {padding} to = "/scheduler">scheduler</Link>
         </div>
 
         <Routes>
-          <Route path="/" element={<About/>} />
+          <Route path="/" element={<Login/>} />
           <Route path = "/scheduler/:id" element = {<Schedule sched = {props.tutorSchedules} addNew = {props.addNewAppointment}/>}/>
           <Route path = "/dashboard" element = {<Dashboard appointments = {props.appointments}/>}/>
           <Route path = "/scheduler" element = {<Scheduler tutors = {props.tutorSchedules}/>}/>
@@ -47,19 +47,17 @@ const Login = ({}) => {
   const username = useField('text')
   const password = useField('text')
   const navigate = useNavigate()
-  const { reset: usernamereset, ...authorProps } = author
-  const { reset: passwordreset, ...passwordProps } = content
+  const { reset: usernamereset, ...usernameProps } = username
+  const { reset: passwordreset, ...passwordProps } = password
 
   const handleSubmit = (e) => {
     e.preventDefault()
     console.log(content)
     props.addNew({
-      content: content.value,
-      author: author.value,
-      info: info.value,
-      votes: 0
+      username: username,
+      password : password
     })
-    navigate('/anecdotes')
+    navigate('/dashboard')
     
   }
   
@@ -69,17 +67,15 @@ const Login = ({}) => {
       <form onSubmit={handleSubmit}>
 
         Username: 
-        <input  {...contentProps} /> 
+        <input  {...usernameProps} /> 
         <br/> 
         Password: 
-        <input {...authorProps} />
+        <input {...passwordProps} />
 
         <button type = "submit">Login</button>
-\
         <button onClick={() => {
-          contentreset()
-          authorreset()
-          inforeset()
+          usernamereset()
+          passwordreset()
         }} type = "reset"> reset </button> 
       </form>
     </div>
@@ -337,6 +333,7 @@ const App = () => {
   ,['Free','Not Free','Not Free','Free','Free'],['Free','Free','Free','Free','Free'],['Free','Free','Free','Free','Free']
   ,['Free','Free','Free','Free','Free'],['Free','Free','Free','Free','Free'],['Free','Free','Free','Free','Free']],
   id: 0}])
+  const [users, setUsers] = useState([{status: 'student', username: 'MD', password: 'haha'},{status: 'tutor', username: 'Quan', password: 'hehe'}])
 
   const getIndex = (day) => {
     switch (day) {case 'Monday':return 0;case 'Tuesday':return 1;case 'Wednesday':return 2;case 'Thursday':return 3;case 'Friday':return 4;default:return -1;}};
@@ -351,6 +348,16 @@ const App = () => {
     updatedTutorschedules[tutorIndex].hours[appointmenthour][appointmentday] = "Not Free"
     setTutorschedules(updatedTutorschedules)
     setAppointments(appointments.concat(appointment))
+  }
+
+  const checklogin = (logininfo) => {
+    if (users.filter((user) => user.username === logininfo.username)){
+      if (users.filter((user) => user.username === logininfo.username)[0].password === logininfo.password){
+        
+      }
+    }
+
+
   }
 
     return (
