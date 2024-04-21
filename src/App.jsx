@@ -52,7 +52,6 @@ const Login = ({}) => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    console.log(content)
     props.addNew({
       username: username,
       password : password
@@ -353,7 +352,7 @@ const App = () => {
   const checklogin = (logininfo) => {
     if (users.filter((user) => user.username === logininfo.username)){
       if (users.filter((user) => user.username === logininfo.username)[0].password === logininfo.password){
-        
+
       }
     }
 
