@@ -8,42 +8,71 @@ import {useField} from './hooks/index'
 import '../style.css'
 
 const Menu = (props) => {
-
-  const appointmentlist = 
-    [{time: 10,
-    day: "Monday",
-  tutor: "Tutor1"},
-   {time: 9,
-    day: "Monday",
-  tutor: "Tutor2"},
-  {time: 10,
-    day: "Tuesday",
-  tutor: "Tutor13"}]
-
   const padding = {
     paddingRight: 5
   }
-  return (
+  const currentuser = props.current
+  const status = currentuser.status
+  console.log(status)
+  if (status == "student"){
+      return (
     <div>
       <Router>
+        
         <div>
-          <Link style={padding} to="/">Login</Link>
-          <Link style = {padding} to = "/dashboard">dashboard</Link>
-          <Link style = {padding} to = "/scheduler">scheduler</Link>
+          <button style = {padding} onClick = {props.SignOut}> Sign Out</button>
+          <Link style = {padding} to = "/student/dashboard">dashboard</Link>
+          <Link style = {padding} to = "/student/scheduler">scheduler</Link>
         </div>
 
         <Routes>
-          <Route path="/" element={<Login/>} />
-          <Route path = "/scheduler/:id" element = {<Schedule sched = {props.tutorSchedules} addNew = {props.addNewAppointment}/>}/>
-          <Route path = "/dashboard" element = {<Dashboard appointments = {props.appointments}/>}/>
-          <Route path = "/scheduler" element = {<Scheduler tutors = {props.tutorSchedules}/>}/>
+          <Route path = "/student/scheduler/:id" element = {<Schedule sched = {props.tutorSchedules} addNew = {props.addNewAppointment} current = {currentuser}/>}/>
+          <Route path = "/student/dashboard" element = {<Dashboard appointments = {props.appointments} current = {currentuser} status = {status}/>}/>
+          <Route path = "/student/scheduler" element = {<Scheduler tutors = {props.tutorSchedules}/>}/>
         </Routes>
       </Router>
+
+      
       </div>
   )
+  } else if (props.current.status === "tutor") {
+    return (
+      <div>
+        <button style = {padding} onClick = {props.SignOut}> Sign Out</button>
+        <Router>
+          <div>
+            <Link style = {padding} to = "/tutor/dashboard">dashboard</Link>
+            <Link style = {padding} to = "/tutor/changeschedule">my schedule</Link>
+          </div>
+  
+          <Routes>
+            <Route path = "/tutor/dashboard" element = {<Dashboard appointments = {props.appointments} current = {currentuser} confirmappointment = {props.handleConfirmation}/>}/>
+            <Route path = "/tutor/changeschedule" element = {<Schedule key = {props.tutorSchedules} sched = {props.tutorSchedules}  current = {currentuser} changeAvailability = {props.changeAvailability}/>}/>
+          </Routes>
+        </Router>
+        
+        </div>
+    )
+  }
+  
+  else{
+    return (
+      <div>
+        <Router>
+          <div>
+            <Link style={padding} to="/">Login</Link>
+          </div>
+          <Routes>
+            <Route path="/" element={<Login handleLogin = {props.checklogin} current = {props.current}/>} />
+          </Routes>
+        </Router>
+        </div>
+    )
+  }
+
 }
 
-const Login = ({}) => {
+const Login = (props) => {
   const username = useField('text')
   const password = useField('text')
   const navigate = useNavigate()
@@ -52,17 +81,17 @@ const Login = ({}) => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    props.addNew({
-      username: username,
-      password : password
+    const type = props.handleLogin({
+      username: username.value,
+      password : password.value
     })
-    navigate('/dashboard')
+    navigate('/'.concat(type) + '/dashboard')
     
   }
   
   return (
     <div>
-      <h2>Login:</h2>
+      <h2>Before proceeding to the Tutoring Planning app, please login:</h2>
       <form onSubmit={handleSubmit}>
 
         Username: 
@@ -155,7 +184,7 @@ const Scheduler = (props) => {
         <div className = "appointment">
           {tutorstoshow.map((tutor, index) => (
                   <ul> <li key={tutor.id}>
-          <Link to={`/scheduler/${tutor.id}`}>{tutor.tutor}</Link>
+          <Link to={`/student/scheduler/${tutor.id}`}>{tutor.tutor}</Link>
         </li>
     </ul>
 ))}
@@ -165,24 +194,56 @@ const Scheduler = (props) => {
 
 
 const Dashboard = (props) =>{
-  console.log(props.appointments)
-  return(<div>
-    <h1>My Dashboard</h1>
-    
-<div className = "box">
-  <div><h2 style={{padding: "5px"}}>Upcoming Appointments</h2> </div>
+  const currentStatus = props.current.status
+
+  if (currentStatus === "tutor"){
+return(
   <div>
-  {props.appointments.map((appointment) => (<div className = "appointment" key = {props.appointments.findIndex(x => x === appointment)}>
-    Appointment with {appointment.tutor} at {appointment.time} o'clock on {appointment.day}
-  </div>))}
-  </div>
+  <h1>My Dashboard</h1>
+  
+  <div className = "box">
+<div><h2 style={{padding: "5px"}}>Confirm Appointments</h2> </div>
+<div>
+{props.appointments.filter((appointment) => appointment.tutor === props.current.username).filter((appointment) => appointment.state === "unconfirmed").map((appointment) => (<div className = "appointment" key = {props.appointments.findIndex(x => x === appointment)}>
+{appointment.student} would like an appointment with you at {appointment.time} o'clock on {appointment.day} <br></br>
+<button onClick={() => props.confirmappointment(appointment)}>Confirm?</button>
+</div>))}
+</div>
 </div>
 
 
-  </div>)
+<div className = "box">
+<div><h2 style={{padding: "5px"}}>Upcoming Appointments</h2> </div>
+<div>
+{props.appointments.filter((appointment) => appointment.tutor === props.current.username).filter((appointment) => appointment.state === "confirmed").map((appointment) => (<div className = "appointment" key = {props.appointments.findIndex(x => x === appointment)}>
+  Appointment with {appointment.student} at {appointment.time} o'clock on {appointment.day}
+</div>))}
+</div>
+</div>
+
+
+</div>)
+
+} else if (currentStatus === "student") {  return(<div>
+  <h1>My Dashboard</h1>
+  
+<div className = "box">
+<div><h2 style={{padding: "5px"}}>Upcoming Appointments</h2> </div>
+<div>
+{props.appointments.filter((appointment) => (appointment.student === props.current.username)).filter((appointment) => (appointment.state === "confirmed")).map((appointment) => (<div className = "appointment" key = {props.appointments.findIndex(x => x === appointment)}>
+  Appointment with {appointment.tutor} at {appointment.time} o'clock on {appointment.day}
+</div>))}
+</div>
+</div>
+
+
+</div>)}
+
 }
 
 const Schedule = (props) => {
+  if (props.current.status === "student") {
+  console.log(props.sched)
   const id = useParams().id
   const schedule = props.sched.find(n => n.id === Number(id)).hours
   const tutorname = props.sched.find(n => n.id === Number(id)).tutor
@@ -210,9 +271,11 @@ const handleOpenModal = (hour, event) => {
       props.addNew({
         time: time,
         day: date,
-        tutor: tutorname
+        tutor: tutorname,
+        student: props.current.username,
+        state: "unconfirmed"
       })
-      navigate('/dashboard')
+      navigate('/student/dashboard')
   }
 
   return (
@@ -301,6 +364,127 @@ Would you like to request an appointment with the tutor at {time} o'clock on {da
       ></div>
     </div>
   );
+} else if (props.current.status === "tutor") {
+  const schedule = props.sched.find(n => n.tutor === props.current.username).hours
+  const navigate = useNavigate()
+  const [overlayActive, setOverlayActive] = useState(false);
+  const [time, setTime] = useState("")
+  const [date, setDate] = useState("")
+  const getIndex = (day) => {
+    switch (day) {case 0:return 'Monday';case 1:return 'Tuesday';case 2:return 'Wednesday';case 3:return 'Thursday';case 4:return 'Friday';default:return 'undefineddate';}};
+
+const handleOpenModal = (hour, event) => {
+  setOverlayActive(true);
+  setTime(hour);
+  const cell = event.target.parentNode;
+  const columnIndex = cell.cellIndex;
+  const day = (getIndex(columnIndex-1))
+  setDate(day.toLocaleString("en-US", { weekday: "long" }));
+};
+
+  const handleCloseModal = () => {
+    setOverlayActive(false);
+  };
+
+
+  const handleScheduleChange = (e) =>{
+      e.preventDefault()
+      props.changeAvailability({
+        time: time,
+        day: date,
+        tutor: props.current.username
+      })
+      navigate('/tutor/changeschedule')
+
+  }
+
+  return (
+    <div>
+      <h1>Edit my schedule:</h1>
+      <p>
+
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <td className="btn noHover"></td>
+            <th>Monday</th>
+            <th>Tuesday</th>
+            <th>Wednesday</th>
+            <th>Thursday</th>
+            <th>Friday</th>
+          </tr>
+        </thead>
+        <tbody>
+          {schedule.map((hours, index) => (
+            <tr key={index}>
+              <th>{8 + index}h</th>
+              {hours.map(function (hour) { if (hour === "Free") {return(
+                <td key={hour}>
+                  <button
+                    data-modal-target="#modal"
+                    onClick={(event) => handleOpenModal(index +8, event)}
+                    style={{
+                      background: "none",
+                      cursor: "pointer",
+                      border: "none",
+                      outline: "none",
+                    }}
+                  >
+                    {hour}
+                  </button>
+                </td>
+            ) }else{
+              return(<td style = {{backgroundColor: "darkgray" }}>{hour}</td>)
+            }} )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <div className={`modal ${overlayActive ? "active" : ""}`} id="modal">
+        <div className="modal-header">
+          <div className="title">Edit availability</div>
+          <button data-close-button className="close-button" onClick={handleCloseModal}>
+            &times;
+          </button>
+        </div>
+        <div className="modal-body">
+Would you like to edit your availability at {time} o'clock on {date}?
+<br></br>
+<button style = {{  
+  padding: "3px 9px 3px 9px",
+  background : "white",
+   cursor: "pointer",
+    color: "black",
+     outline : "none",
+      border: "solid",
+       borderRadius: "10px",
+       marginLeft: "10px",
+       marginBottom: "10px",
+       float: "right",
+            }} onClick = {handleScheduleChange}> Yes</button>
+  
+<button style = {{  
+    padding: "3px 9px 3px 9px",
+    background : "white",
+     cursor: "pointer",
+      color: "black",
+       outline : "none",
+        border: "solid",
+         borderRadius: "10px",
+         marginLeft: "10px",
+         marginBottom: "10px",
+         float: "right"
+  }}>No</button>
+        </div>
+      </div>
+      <div
+        className={`overlay ${overlayActive ? "active" : ""}`}
+        onClick={handleCloseModal}
+      ></div>
+    </div>
+  );
+}
 };
 
 const About = () => (
@@ -326,14 +510,14 @@ const App = () => {
   /* THE TUTORING PLANNING STUFF*/
 
   const [appointments, setAppointments] = useState([])
-  const [tutorschedules, setTutorschedules] = useState([{tutor: "tutor1",
+  const [tutorschedules, setTutorschedules] = useState([{tutor: "Quan",
   hours : [['Free','Not Free','Free','Free','Free'],['Free','Free','Free','Free','Free'],
   ['Free','Free','Free','Free','Free'],['Not Free','Free','Free','Free','Free']
   ,['Free','Not Free','Not Free','Free','Free'],['Free','Free','Free','Free','Free'],['Free','Free','Free','Free','Free']
   ,['Free','Free','Free','Free','Free'],['Free','Free','Free','Free','Free'],['Free','Free','Free','Free','Free']],
   id: 0}])
   const [users, setUsers] = useState([{status: 'student', username: 'MD', password: 'haha'},{status: 'tutor', username: 'Quan', password: 'hehe'}])
-
+  const [current,setcurrent] = useState({})
   const getIndex = (day) => {
     switch (day) {case 'Monday':return 0;case 'Tuesday':return 1;case 'Wednesday':return 2;case 'Thursday':return 3;case 'Friday':return 4;default:return -1;}};
 
@@ -350,20 +534,45 @@ const App = () => {
   }
 
   const checklogin = (logininfo) => {
-    if (users.filter((user) => user.username === logininfo.username)){
-      if (users.filter((user) => user.username === logininfo.username)[0].password === logininfo.password){
-
+    const user = users.find((user) => user.username === logininfo.username);
+    if (user) {
+      if (user.password === logininfo.password) {
+        setcurrent(user);
+        console.log(current);
+      } else {
+        alert("Incorrect password");
       }
+    } else {
+      alert("User not found");
     }
+  return(user.status)
+  };
 
-
+  const handleSignout = () => {
+    setcurrent({})
+  }
+  const handleConfirmation = (appointment) => {
+    const app = [...appointments]
+    app[app.findIndex(appointmente => (appointmente === appointment))] = {...appointment, state: "confirmed"}
+    console.log(app)
+    setAppointments(app)
   }
 
-    return (
-    <div>
-      <h1>Some stuff</h1>
-      <Menu addNewAppointment = {addNewAppointment} appointments = {appointments} tutorSchedules = {tutorschedules}/>
-      <Footer />
+  const changeAvailability = (appointment) =>{
+    const day = getIndex(appointment.day);
+    const hour = appointment.time - 8;
+    const tutorIndex = tutorschedules.findIndex(({ tutor }) => tutor === current.username);
+    const updatedTutorschedules = [...tutorschedules];
+    const updatedHours = [...updatedTutorschedules[tutorIndex].hours];
+    updatedHours[hour][day] = "Not Free";
+    updatedTutorschedules[tutorIndex].hours = updatedHours;
+    setTutorschedules(updatedTutorschedules);
+  }
+  return (
+    <div> 
+    {current.username == null ? <h1>Some stuff</h1> : <h1>Welcome {current.username}</h1>}
+      
+      <Menu addNewAppointment = {addNewAppointment} appointments = {appointments} tutorSchedules = {tutorschedules} checklogin = {checklogin} current = {current} SignOut = {handleSignout} handleConfirmation = {handleConfirmation} changeAvailability = {changeAvailability}/>
     </div>
   )
 }
