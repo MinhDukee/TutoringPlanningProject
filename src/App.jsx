@@ -394,7 +394,7 @@ const handleOpenModal = (hour, event) => {
         day: date,
         tutor: props.current.username
       })
-      navigate('/tutor/changeschedule')
+      handleCloseModal()
 
   }
 
@@ -420,7 +420,7 @@ const handleOpenModal = (hour, event) => {
             <tr key={index}>
               <th>{8 + index}h</th>
               {hours.map(function (hour) { if (hour === "Free") {return(
-                <td key={hour}>
+                <td>
                   <button
                     data-modal-target="#modal"
                     onClick={(event) => handleOpenModal(index +8, event)}
@@ -435,7 +435,19 @@ const handleOpenModal = (hour, event) => {
                   </button>
                 </td>
             ) }else{
-              return(<td style = {{backgroundColor: "darkgray" }}>{hour}</td>)
+              return(<td style = {{backgroundColor: "darkgray" }}>                  
+              <button
+              data-modal-target="#modal"
+              onClick={(event) => handleOpenModal(index +8, event)}
+              style={{
+                background: "none",
+                cursor: "pointer",
+                border: "none",
+                outline: "none",
+              }}
+            >
+              {hour}
+            </button></td>)
             }} )}
             </tr>
           ))}
@@ -564,9 +576,15 @@ const App = () => {
     const tutorIndex = tutorschedules.findIndex(({ tutor }) => tutor === current.username);
     const updatedTutorschedules = [...tutorschedules];
     const updatedHours = [...updatedTutorschedules[tutorIndex].hours];
-    updatedHours[hour][day] = "Not Free";
+    if (updatedHours[hour][day] == "Free"){
+      updatedHours[hour][day] = "Not Free";
+    } else {
+      updatedHours[hour][day] = "Free";
+    }
+    
     updatedTutorschedules[tutorIndex].hours = updatedHours;
     setTutorschedules(updatedTutorschedules);
+    console.log(tutorschedules)
   }
   return (
     <div> 
