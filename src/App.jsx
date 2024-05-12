@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useState, useEffect } from 'react'
 import {
   BrowserRouter as Router,
@@ -98,7 +99,7 @@ const Login = (props) => {
         <input  {...usernameProps} /> 
         <br/> 
         Password: 
-        <input {...passwordProps} />
+        <input type = "password" {...passwordProps} />
 
         <button type = "submit">Login</button>
         <button onClick={() => {
@@ -420,7 +421,7 @@ const handleOpenModal = (hour, event) => {
             <tr key={index}>
               <th>{8 + index}h</th>
               {hours.map(function (hour) { if (hour === "Free") {return(
-                <td>
+                <td key = {index%7}>
                   <button
                     data-modal-target="#modal"
                     onClick={(event) => handleOpenModal(index +8, event)}
@@ -487,7 +488,7 @@ Would you like to edit your availability at {time} o'clock on {date}?
          marginLeft: "10px",
          marginBottom: "10px",
          float: "right"
-  }}>No</button>
+  }} onClick={handleCloseModal} >No</button>
         </div>
       </div>
       <div
@@ -518,7 +519,6 @@ const Footer = () => (
 )
 
 const App = () => {
-
   /* THE TUTORING PLANNING STUFF*/
 
   const [appointments, setAppointments] = useState([])
@@ -530,6 +530,18 @@ const App = () => {
   id: 0}])
   const [users, setUsers] = useState([{status: 'student', username: 'MD', password: 'haha'},{status: 'tutor', username: 'Quan', password: 'hehe'}])
   const [current,setcurrent] = useState({})
+
+  useEffect(() => {
+    axios
+      .get('http://localhost:3001/appointments')
+      .then(response => {
+        console.log('promise fulfilled')
+        setAppointments(response.data)
+      })
+  }, [])
+
+
+
   const getIndex = (day) => {
     switch (day) {case 'Monday':return 0;case 'Tuesday':return 1;case 'Wednesday':return 2;case 'Thursday':return 3;case 'Friday':return 4;default:return -1;}};
 
@@ -543,6 +555,13 @@ const App = () => {
     updatedTutorschedules[tutorIndex].hours[appointmenthour][appointmentday] = "Not Free"
     setTutorschedules(updatedTutorschedules)
     setAppointments(appointments.concat(appointment))
+
+    axios
+    .post('http://localhost:3001/appointments', appointment)
+    .then(response => {
+      console.log(response)
+    })
+
   }
 
   const checklogin = (logininfo) => {
