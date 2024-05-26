@@ -79,15 +79,22 @@ const Login = (props) => {
   const navigate = useNavigate()
   const { reset: usernamereset, ...usernameProps } = username
   const { reset: passwordreset, ...passwordProps } = password
-
-  const handleSubmit = (e) => {
+  const [role, setRole] = useState("student")
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    const type = props.handleLogin({
+    console.log(role)
+    const type = await props.handleLogin({
       username: username.value,
-      password : password.value
+      password : password.value,
+      role: role
     })
+    console.log(type)
     navigate('/'.concat(type) + '/dashboard')
     
+  }
+
+  const handleChange = (e) =>{
+    setRole(e.target.value)
   }
   
   return (
@@ -100,6 +107,12 @@ const Login = (props) => {
         <br/> 
         Password: 
         <input type = "password" {...passwordProps} />
+        <br/>
+        Role:
+        <select id="mySelect" name="mySelect" value = {role} onChange = {handleChange}>
+    <option value="student">Student</option>
+    <option value="tutor">Tutor</option>
+  </select>
 
         <button type = "submit">Login</button>
         <button onClick={() => {
@@ -246,8 +259,8 @@ const Schedule = (props) => {
   if (props.current.status === "student") {
   console.log(props.sched)
   const id = useParams().id
-  const schedule = props.sched.find(n => n.id === Number(id)).hours
-  const tutorname = props.sched.find(n => n.id === Number(id)).tutor
+  const schedule = props.sched.find(n => n.id === id).hours
+  const tutorname = props.sched.find(n => n.id === id).tutor
   const navigate = useNavigate()
   const [overlayActive, setOverlayActive] = useState(false);
   const [time, setTime] = useState("")
@@ -418,10 +431,10 @@ const handleOpenModal = (hour, event) => {
         </thead>
         <tbody>
           {schedule.map((hours, index) => (
-            <tr key={index}>
+            <tr key={`${index}-${hours.id}`}>
               <th>{8 + index}h</th>
-              {hours.map(function (hour) { if (hour === "Free") {return(
-                <td key = {index%7}>
+              {hours.map(function (hour, hourIndex) { if (hour === "Free") {return(
+                <td key={`${hourIndex}-${hour}`}>
                   <button
                     data-modal-target="#modal"
                     onClick={(event) => handleOpenModal(index +8, event)}
@@ -522,12 +535,7 @@ const App = () => {
   /* THE TUTORING PLANNING STUFF*/
 
   const [appointments, setAppointments] = useState([])
-  const [tutorschedules, setTutorschedules] = useState([{tutor: "Quan",
-  hours : [['Free','Not Free','Free','Free','Free'],['Free','Free','Free','Free','Free'],
-  ['Free','Free','Free','Free','Free'],['Not Free','Free','Free','Free','Free']
-  ,['Free','Not Free','Not Free','Free','Free'],['Free','Free','Free','Free','Free'],['Free','Free','Free','Free','Free']
-  ,['Free','Free','Free','Free','Free'],['Free','Free','Free','Free','Free'],['Free','Free','Free','Free','Free']],
-  id: 0}])
+  const [tutorschedules, setTutorschedules] = useState([])
   const [users, setUsers] = useState([{status: 'student', username: 'MD', password: 'haha'},{status: 'tutor', username: 'Quan', password: 'hehe'}])
   const [current,setcurrent] = useState({})
 
@@ -538,6 +546,12 @@ const App = () => {
         console.log('promise fulfilled')
         setAppointments(response.data)
       })
+    axios
+      .get('http://localhost:3001/schedules')
+      .then(response => {
+        console.log('promise fulfilled')
+        setTutorschedules(response.data)
+      })
   }, [])
 
 
@@ -546,13 +560,13 @@ const App = () => {
     switch (day) {case 'Monday':return 0;case 'Tuesday':return 1;case 'Wednesday':return 2;case 'Thursday':return 3;case 'Friday':return 4;default:return -1;}};
 
   const addNewAppointment = (appointment) => {
-    appointment.id = Math.round(Math.random() * 10000)
     console.log(appointment.day)
     const appointmentday = getIndex(appointment.day)
     const appointmenthour = (appointment.time-8) 
     const tutorIndex = tutorschedules.findIndex((tutor) => tutor.tutor === appointment.tutor)
     const updatedTutorschedules = [...tutorschedules]
     updatedTutorschedules[tutorIndex].hours[appointmenthour][appointmentday] = "Not Free"
+    axios.put('http://localhost:3001/schedules' , updatedTutorschedules[tutorIndex])
     setTutorschedules(updatedTutorschedules)
     setAppointments(appointments.concat(appointment))
 
@@ -564,19 +578,11 @@ const App = () => {
 
   }
 
-  const checklogin = (logininfo) => {
-    const user = users.find((user) => user.username === logininfo.username);
-    if (user) {
-      if (user.password === logininfo.password) {
-        setcurrent(user);
-        console.log(current);
-      } else {
-        alert("Incorrect password");
-      }
-    } else {
-      alert("User not found");
-    }
-  return(user.status)
+  const checklogin = async (logininfo) => {
+  const userinfo = await axios.post('http://localhost:3001/login', logininfo)
+  console.log(userinfo.data.status)
+  setcurrent(userinfo.data)
+  return(userinfo.data.status)
   };
 
   const handleSignout = () => {
@@ -584,6 +590,7 @@ const App = () => {
   }
   const handleConfirmation = (appointment) => {
     const app = [...appointments]
+    axios.put('http://localhost:3001/appointments', app[app.findIndex(appointmente => (appointmente === appointment))])
     app[app.findIndex(appointmente => (appointmente === appointment))] = {...appointment, state: "confirmed"}
     console.log(app)
     setAppointments(app)
@@ -602,12 +609,16 @@ const App = () => {
     }
     
     updatedTutorschedules[tutorIndex].hours = updatedHours;
+
+    axios.put('http://localhost:3001/schedules', updatedTutorschedules[tutorIndex])
+
     setTutorschedules(updatedTutorschedules);
+
     console.log(tutorschedules)
   }
   return (
     <div> 
-    {current.username == null ? <h1>Some stuff</h1> : <h1>Welcome {current.username}</h1>}
+    {current.username == null ? <h1>TutoringPlanningApp</h1> : <h1>Welcome {current.username}</h1>}
       
       <Menu addNewAppointment = {addNewAppointment} appointments = {appointments} tutorSchedules = {tutorschedules} checklogin = {checklogin} current = {current} SignOut = {handleSignout} handleConfirmation = {handleConfirmation} changeAvailability = {changeAvailability}/>
     </div>
